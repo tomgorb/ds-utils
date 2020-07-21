@@ -1,0 +1,549 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to ds-utils’s documentation! &mdash; ds-utils 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> ds-utils
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Welcome to ds-utils’s documentation!</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">ds-utils</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to ds-utils’s documentation!</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-ds-utils-s-documentation">
+<h1>Welcome to ds-utils’s documentation!<a class="headerlink" href="#welcome-to-ds-utils-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+</div>
+<span class="target" id="module-dsUtils"></span><dl class="py class">
+<dt id="dsUtils.Aggregator">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">Aggregator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aggregation_keys</span></em>, <em class="sig-param"><span class="n">aggregation_strategy</span></em>, <em class="sig-param"><span class="n">vectorizor_compatibility</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Aggregator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Aggregator" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class allows for the transformation of an unaggregated data frame into an aggregated one
+(<em>Vectorizor</em> compatible).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aggregation_keys</strong> (<em>list</em>) – List of columns used for the aggregation (group by).</p></li>
+<li><p><strong>aggregation_strategy</strong> (<em>dict</em>) – Dictionary {‘column’: aggregation_function}.
+Built-in aggregation functions exist as <em>counter</em> and <em>normalized_counter</em>.</p></li>
+<li><p><strong>vectorizor_compatibility</strong> (<em>bool</em>) – Custom arg. with default value = False.
+Use True for exploratory data analysis (categorical features will not be mapped to dictionary).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="dsUtils.Aggregator.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Aggregator.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Aggregator.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the class attributes according to the provided data frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas DataFrame</em>) – The data frame to be aggregated.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>self (object)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="dsUtils.Aggregator.transform">
+<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Aggregator.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Aggregator.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform <strong>df</strong> into <strong>agg_df</strong> which is <em>Vectorizor</em> compatible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas DataFrame</em>) – The data frame to be aggregated.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The resulting aggregated data frame.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>agg_df (pandas Dataframe)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.Counterizor">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">Counterizor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ignored_columns</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Counterizor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Counterizor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class allows for the transformation of categorical features into Counters for <em>Vectorizor</em> compatibility.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ignored_colums</strong> (<em>list</em>) – Leave these columns alone!</p></li>
+<li><p><strong>sharp_categorical_dict</strong> (<em>dict</em>) – Dictionary {‘column’: {‘sep’: “#”, ‘norm’: True/False} }.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="dsUtils.Counterizor.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Counterizor.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Counterizor.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the class attributes according to the provided data frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas DataFrame</em>) – The data frame to be counterized.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>self (Counterizor)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="dsUtils.Counterizor.transform">
+<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Counterizor.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Counterizor.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform <strong>df</strong> in place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas DataFrame</em>) – The data frame to be counterized.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The resulting counterized data frame.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>df (pandas Dataframe)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.CounterizorTest">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">CounterizorTest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">methodName</span><span class="o">=</span><span class="default_value">'runTest'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#CounterizorTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.CounterizorTest" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="dsUtils.CounterizorTest.setUp">
+<code class="sig-name descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#CounterizorTest.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.CounterizorTest.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.CustomStrategy">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">CustomStrategy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">strategy</span></em>, <em class="sig-param"><span class="n">default</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#CustomStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.CustomStrategy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.CustomStrategyTest">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">CustomStrategyTest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">methodName</span><span class="o">=</span><span class="default_value">'runTest'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#CustomStrategyTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.CustomStrategyTest" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="dsUtils.CustomStrategyTest.setUp">
+<code class="sig-name descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#CustomStrategyTest.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.CustomStrategyTest.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.Imputor">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">Imputor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ignored_columns</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">na_strategy</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Imputor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Imputor" title="Permalink to this definition">¶</a></dt>
+<dd><p>IMPUTOR
+input = vectorized DataFrame
+output = same DataFrame with missing values imputed</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.MeanStrategy">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">MeanStrategy</code><a class="reference internal" href="_modules/dsUtils.html#MeanStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.MeanStrategy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.MedianStrategy">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">MedianStrategy</code><a class="reference internal" href="_modules/dsUtils.html#MedianStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.MedianStrategy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.NoneStrategy">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">NoneStrategy</code><a class="reference internal" href="_modules/dsUtils.html#NoneStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.NoneStrategy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.NoneStrategyTest">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">NoneStrategyTest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">methodName</span><span class="o">=</span><span class="default_value">'runTest'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#NoneStrategyTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.NoneStrategyTest" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.Preprocessor">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">Preprocessor</code><a class="reference internal" href="_modules/dsUtils.html#Preprocessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Preprocessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class allows for the complete pre-processing of a DataFrame into a sparse matrix for model input.</p>
+<dl class="py method">
+<dt id="dsUtils.Preprocessor.fit_transform">
+<code class="sig-name descname">fit_transform</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">pruning_frequency=None</em>, <em class="sig-param">do_not_use=None</em>, <em class="sig-param">sharp_categorical_dict=None</em>, <em class="sig-param">na_strategy=&lt;dsUtils.MeanStrategy object&gt;</em>, <em class="sig-param">variance_threshold=None</em>, <em class="sig-param">low_memory=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Preprocessor.fit_transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Preprocessor.fit_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pre-process input_files for the training phase. Once completed, you should save the resulting Preprocessor
+object for the predict phase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas DataFrame</em>) – dataframe to be pre-processed.</p></li>
+<li><p><strong>pruning_frequency</strong> (<em>float</em><em> or </em><em>None</em>) – Frequency below which value in categorical features are pruned (set to <em>misc</em>). (deactivated by default)</p></li>
+<li><p><strong>do_not_use</strong> (<em>list</em><em> or </em><em>None</em>) – Leave these columns alone!</p></li>
+<li><p><strong>sharp_categorical_dict</strong> (<em>dict</em>) – <p>{‘column’: {‘sep’: “#”, ‘norm’: True/False} }.</p>
+<p>If not provided, program looks for columns ending in <em>_cat</em> and automatically
+creates an entry in the dict with value {‘sep’: “#”, ‘norm’: True}.</p>
+</p></li>
+<li><p><strong>na_strategy</strong> (<a class="reference internal" href="#dsUtils.Strategy" title="dsUtils.Strategy"><em>Strategy</em></a>) – Strategy used to impute missing values.</p></li>
+<li><p><strong>variance_threshold</strong> (<em>float</em><em> or </em><em>None</em>) – Threshold for variance selector. (deactivated by default)</p></li>
+<li><p><strong>low_memory</strong> (<em>bool</em>) – If True, counterizor will not use parallel computation. default: False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>namedtuple(‘data’, [‘X’, ‘other’, ‘names’])</p>
+<blockquote>
+<div><p>data.X (scipy sparse matrix): model input</p>
+<p>data.other (pandas DataFrame): columns unused</p>
+</div></blockquote>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="dsUtils.Preprocessor.transform">
+<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">low_memory</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Preprocessor.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Preprocessor.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pre-process input_files using the same pre-processing parameters used for the training phase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas DataFrame</em>) – dataframe to be pre-processed.</p></li>
+<li><p><strong>low_memory</strong> (<em>bool</em>) – If True, counterizor will not use parallel computation. default: False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>namedtuple(‘data’, [‘X’, ‘other’, ‘names’])</p>
+<blockquote>
+<div><p>data.X (scipy sparse matrix): model input</p>
+<p>data.other (pandas DataFrame): columns unused</p>
+</div></blockquote>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.Prunificator">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">Prunificator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ignored_columns</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">frequency</span><span class="o">=</span><span class="default_value">0.0001</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Prunificator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Prunificator" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class allows to remove values in categorical features whose frequency is less than <em>frequency</em>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.Sparsifior">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">Sparsifior</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keys</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">target</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Sparsifior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Sparsifior" title="Permalink to this definition">¶</a></dt>
+<dd><p>SPARSIFIOR
+input = DataFrame + sparse matrix
+output = namedtuple(‘data’, [‘keys’, ‘features’, ‘X’, ‘y’])</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.Strategy">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">Strategy</code><a class="reference internal" href="_modules/dsUtils.html#Strategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Strategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Skeleton for missing values imputation strategy.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Metaclass! You should define your own derived class.</p>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.VarianceSelector">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">VarianceSelector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">threshold</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#VarianceSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.VarianceSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Feature selector that removes all low variance features.</p>
+<dl class="py method">
+<dt id="dsUtils.VarianceSelector.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#VarianceSelector.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.VarianceSelector.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learn empirical variances from X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>array-like</em><em> or </em><em>sparse matrix of shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em>) – Sample vectors from which to compute variances.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>self</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="dsUtils.VarianceSelector.fit_transform">
+<code class="sig-name descname">fit_transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#VarianceSelector.fit_transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.VarianceSelector.fit_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit to data, then transform it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>array of shape</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em>) – Training set.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X_new</strong> – Transformed array.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array of shape [n_samples, n_features_new]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="dsUtils.VarianceSelector.select_features">
+<code class="sig-name descname">select_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">features</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#VarianceSelector.select_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.VarianceSelector.select_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select features with enough variance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>features</strong> (<em>array of shape</em><em> [</em><em>n_features</em><em>]</em>) – Names of the features.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>selected_features</strong> – An array with only the names of the selected_features.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array of shape [n_selected_features]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="dsUtils.VarianceSelector.transform">
+<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#VarianceSelector.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.VarianceSelector.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduce X to the selected features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>array of shape</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em>) – The input samples.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X_r</strong> – The input samples with only the selected features.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array of shape [n_samples, n_selected_features]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.VarianceSelectorTest">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">VarianceSelectorTest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">methodName</span><span class="o">=</span><span class="default_value">'runTest'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#VarianceSelectorTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.VarianceSelectorTest" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="dsUtils.VarianceSelectorTest.setUp">
+<code class="sig-name descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#VarianceSelectorTest.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.VarianceSelectorTest.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.Vectorizor">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">Vectorizor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ignored_columns</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#Vectorizor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.Vectorizor" title="Permalink to this definition">¶</a></dt>
+<dd><p>VECTORIZOR
+input = counterized DataFrame
+output = namedtuple(‘data’, [‘df’, ‘sm’, ‘sm_columns’])</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.ZeroStrategy">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">ZeroStrategy</code><a class="reference internal" href="_modules/dsUtils.html#ZeroStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.ZeroStrategy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="dsUtils.ZeroStrategyTest">
+<em class="property">class </em><code class="sig-prename descclassname">dsUtils.</code><code class="sig-name descname">ZeroStrategyTest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">methodName</span><span class="o">=</span><span class="default_value">'runTest'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#ZeroStrategyTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.ZeroStrategyTest" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="dsUtils.ZeroStrategyTest.setUp">
+<code class="sig-name descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsUtils.html#ZeroStrategyTest.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsUtils.ZeroStrategyTest.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, TGT
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

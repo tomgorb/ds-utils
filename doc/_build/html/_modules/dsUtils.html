@@ -1,0 +1,1131 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dsUtils &mdash; ds-utils 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> ds-utils
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ds-utils</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>dsUtils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dsUtils</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># numpy==1.16.0</span>
+<span class="c1"># pandas==0.23.4</span>
+<span class="c1"># scikit-learn==0.20.0</span>
+<span class="c1"># scipy==0.16.1</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">sparse</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">repeat</span><span class="p">,</span> <span class="n">compress</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">sklearn.feature_extraction</span> <span class="kn">import</span> <span class="n">DictVectorizer</span>
+<span class="kn">from</span> <span class="nn">sklearn.feature_selection</span> <span class="kn">import</span> <span class="n">VarianceThreshold</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">fit_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="Strategy"><a class="viewcode-back" href="../index.html#dsUtils.Strategy">[docs]</a><span class="k">class</span> <span class="nc">Strategy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Skeleton for missing values imputation strategy.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">       Metaclass! You should define your own derived class.</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ABCMeta</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="CustomStrategy"><a class="viewcode-back" href="../index.html#dsUtils.CustomStrategy">[docs]</a><span class="k">class</span> <span class="nc">CustomStrategy</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CustomStrategy</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">strategy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="n">default</span>
+
+    <span class="k">def</span> <span class="nf">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">imputed_cols</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">imputed_cols</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No columns provided!&quot;</span><span class="p">)</span>
+        <span class="n">not_imputed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">imputed_cols</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">not_imputed</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Columns </span><span class="si">{columns}</span><span class="s2"> will not be imputed.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">not_imputed</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">na_dict</span> <span class="o">=</span> <span class="n">ZeroStrategy</span><span class="p">()</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">imputed_cols</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">na_dict</span> <span class="o">=</span> <span class="n">MeanStrategy</span><span class="p">()</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">imputed_cols</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">imputed_cols</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+                    <span class="n">na_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Entire column </span><span class="si">{col}</span><span class="s2"> is NA =&gt; default imputation!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">))</span>
+                        <span class="c1"># na_dict.pop(col)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">na_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Entire column </span><span class="si">{col}</span><span class="s2"> is NA =&gt; default imputation!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">))</span>
+                        <span class="c1"># na_dict.pop(col)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">na_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Strategy unknown for column </span><span class="si">{col}</span><span class="s2"> =&gt; default imputation!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">))</span>
+                    <span class="c1"># na_dict.pop(col)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Column </span><span class="si">{col}</span><span class="s2"> not in imputed_cols!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">na_dict</span></div>
+
+
+<div class="viewcode-block" id="NoneStrategy"><a class="viewcode-back" href="../index.html#dsUtils.NoneStrategy">[docs]</a><span class="k">class</span> <span class="nc">NoneStrategy</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NoneStrategy</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">imputed_cols</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="ZeroStrategy"><a class="viewcode-back" href="../index.html#dsUtils.ZeroStrategy">[docs]</a><span class="k">class</span> <span class="nc">ZeroStrategy</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ZeroStrategy</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">imputed_cols</span><span class="p">):</span>
+        <span class="n">na_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">imputed_cols</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">na_dict</span></div>
+
+
+<div class="viewcode-block" id="MeanStrategy"><a class="viewcode-back" href="../index.html#dsUtils.MeanStrategy">[docs]</a><span class="k">class</span> <span class="nc">MeanStrategy</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MeanStrategy</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">imputed_cols</span><span class="p">):</span>
+        <span class="n">na_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">imputed_cols</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">na_dict</span></div>
+
+
+<div class="viewcode-block" id="MedianStrategy"><a class="viewcode-back" href="../index.html#dsUtils.MedianStrategy">[docs]</a><span class="k">class</span> <span class="nc">MedianStrategy</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MedianStrategy</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">imputed_cols</span><span class="p">):</span>
+        <span class="n">na_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">())</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">imputed_cols</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">na_dict</span></div>
+
+
+<span class="n">CATEGORICAL_FEATURE</span> <span class="o">=</span> <span class="s2">&quot;cat_</span><span class="si">{name}</span><span class="s2">&quot;</span>
+<span class="n">REGEXP_CF</span> <span class="o">=</span> <span class="s2">&quot;^cat_.*$&quot;</span>
+<span class="n">SHARP_CATEGORICAL_FEATURE</span> <span class="o">=</span> <span class="s2">&quot;#_cat_</span><span class="si">{name}</span><span class="s2">&quot;</span>
+<span class="n">REGEXP_SCF</span> <span class="o">=</span> <span class="s2">&quot;^#_cat_.*$&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">my_counter</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Counter</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">my_normalized_counter</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">counter_</span> <span class="o">=</span> <span class="n">my_counter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">total_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counter_</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">label</span><span class="p">:</span> <span class="n">count</span> <span class="o">*</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">total_count</span> <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">counter_</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span> <span class="k">if</span> <span class="n">total_count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">counter_</span>
+
+
+<span class="k">def</span> <span class="nf">my_instance</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="n">Counter</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">v</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">my_counter</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="k">return</span><span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="Prunificator"><a class="viewcode-back" href="../index.html#dsUtils.Prunificator">[docs]</a><span class="k">class</span> <span class="nc">Prunificator</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Prunificator</span>
+<span class="sd">    This class allows to remove values in categorical features whose frequency is less than *frequency*.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignored_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Prunificator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Prunificator&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="o">=</span> <span class="n">ignored_columns</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_dict</span> <span class="o">=</span> <span class="n">sharp_categorical_dict</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">frequency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keeped_values_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="c1"># GET (NAME: KIND) OF COLUMNS</span>
+        <span class="n">columns_kind</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span><span class="p">}</span>
+        <span class="c1"># CATEGORICAL FEATURES</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">columns_kind</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span> <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;if&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">columns_kind</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">tmp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">:</span>
+            <span class="n">counts</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keeped_values_dict</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="n">counts</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">:</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">][</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keeped_values_dict</span><span class="p">[</span><span class="n">column</span><span class="p">]),</span> <span class="n">other</span><span class="o">=</span><span class="s2">&quot;misc&quot;</span><span class="p">,</span>
+                             <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Aggregator"><a class="viewcode-back" href="../index.html#dsUtils.Aggregator">[docs]</a><span class="k">class</span> <span class="nc">Aggregator</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Aggregator</span>
+<span class="sd">    This class allows for the transformation of an unaggregated data frame into an aggregated one</span>
+<span class="sd">    (*Vectorizor* compatible).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        aggregation_keys (list): List of columns used for the aggregation (group by).</span>
+<span class="sd">        aggregation_strategy (dict): Dictionary {&#39;column&#39;: aggregation_function}.</span>
+<span class="sd">                Built-in aggregation functions exist as *counter* and *normalized_counter*.</span>
+<span class="sd">        vectorizor_compatibility (bool): Custom arg. with default value = False.</span>
+<span class="sd">                Use True for exploratory data analysis (categorical features will not be mapped to dictionary).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">aggregation_functions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;counter&quot;</span><span class="p">:</span> <span class="n">my_counter</span><span class="p">,</span> <span class="s2">&quot;normalized_counter&quot;</span><span class="p">:</span> <span class="n">my_normalized_counter</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aggregation_keys</span><span class="p">,</span> <span class="n">aggregation_strategy</span><span class="p">,</span> <span class="n">vectorizor_compatibility</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Aggregator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Aggregator&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_keys</span> <span class="o">=</span> <span class="n">aggregation_keys</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">aggregation_keys</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">aggregation_keys</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_strategy</span> <span class="o">=</span> <span class="n">aggregation_strategy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vectorizor_compatibility</span> <span class="o">=</span> <span class="n">vectorizor_compatibility</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Aggregator.fit"><a class="viewcode-back" href="../index.html#dsUtils.Aggregator.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fit the class attributes according to the provided data frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas DataFrame): The data frame to be aggregated.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self (object)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># GET (NAME: KIND) OF COLUMNS</span>
+        <span class="n">columns_kind</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_keys</span><span class="p">}</span>
+        <span class="c1"># CATEGORICAL FEATURES</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="n">columns_kind</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">([</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">columns_kind</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span> <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;if&#39;</span><span class="p">]))</span>
+        <span class="c1"># WARNING</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">columns_kind</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation_strategy</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;Aggregation functions not provided for all columns, columns </span><span class="si">{columns}</span><span class="s1"> will be dropped!&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">columns</span><span class="o">=</span><span class="n">missing</span><span class="p">))</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">missing</span> <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">]</span>
+        <span class="n">unknown</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation_strategy</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">columns_kind</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Aggregation functions provided for non existing columns </span><span class="si">{columns}</span><span class="s1">!&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">unknown</span><span class="p">))</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation_strategy</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unknown</span><span class="p">]</span>
+        <span class="c1"># AGGREGATION STRATEGY</span>
+        <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">strategy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_strategy</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_strategy</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_functions</span><span class="p">[</span>
+                <span class="n">strategy</span><span class="p">]</span> <span class="k">if</span> <span class="n">strategy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aggregation_functions</span> <span class="k">else</span> <span class="n">strategy</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Aggregator.transform"><a class="viewcode-back" href="../index.html#dsUtils.Aggregator.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Transform **df** into **agg_df** which is *Vectorizor* compatible.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas DataFrame): The data frame to be aggregated.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            agg_df (pandas Dataframe): The resulting aggregated data frame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># CATEGORICAL FEATURES</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">({</span><span class="n">col</span><span class="p">:</span> <span class="s1">&#39;other&#39;</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="s1">&#39;other&#39;</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation_strategy</span><span class="p">)</span>
+        <span class="n">agg_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation_keys</span><span class="p">)</span><span class="o">.</span><span class="n">aggregate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aggregation_strategy</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectorizor_compatibility</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">:</span>
+                <span class="n">agg_df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">agg_df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">my_instance</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="n">agg_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">CATEGORICAL_FEATURE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">col</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">},</span>
+                      <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">agg_df</span></div>
+
+    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Counterizor"><a class="viewcode-back" href="../index.html#dsUtils.Counterizor">[docs]</a><span class="k">class</span> <span class="nc">Counterizor</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Counterizor</span>
+<span class="sd">    This class allows for the transformation of categorical features into Counters for *Vectorizor* compatibility.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ignored_colums (list): Leave these columns alone!</span>
+<span class="sd">        sharp_categorical_dict (dict): Dictionary {&#39;column&#39;: {&#39;sep&#39;: &quot;#&quot;, &#39;norm&#39;: True/False} }.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignored_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Counterizor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Counterizor&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="o">=</span> <span class="n">ignored_columns</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_dict</span> <span class="o">=</span> <span class="n">sharp_categorical_dict</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_counter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">norm</span><span class="p">):</span>
+        <span class="n">counter_</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+            <span class="n">total_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counter_</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">counter_</span> <span class="o">=</span> <span class="p">{</span><span class="n">label</span><span class="p">:</span> <span class="n">count</span> <span class="o">*</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">total_count</span> <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span>
+                        <span class="n">counter_</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()}</span> <span class="k">if</span> <span class="n">total_count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">counter_</span>
+        <span class="k">return</span> <span class="n">counter_</span>
+
+<div class="viewcode-block" id="Counterizor.fit"><a class="viewcode-back" href="../index.html#dsUtils.Counterizor.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Fit the class attributes according to the provided data frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas DataFrame): The data frame to be counterized.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self (Counterizor)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># GET (NAME: KIND) OF COLUMNS</span>
+        <span class="n">columns_kind</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span><span class="p">}</span>
+        <span class="c1"># CATEGORICAL FEATURES</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">columns_kind</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span> <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;if&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">columns_kind</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">tmp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Counterizor.transform"><a class="viewcode-back" href="../index.html#dsUtils.Counterizor.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Transform **df** in place.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas DataFrame): The data frame to be counterized.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            df (pandas Dataframe): The resulting counterized data frame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># CATEGORICAL FEATURES</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">({</span><span class="n">column</span><span class="p">:</span> <span class="s1">&#39;&#39;</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">]</span><span class="o">.</span><span class="n">applymap</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span> <span class="k">if</span> <span class="n">v</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;other&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">column</span><span class="p">:</span> <span class="n">CATEGORICAL_FEATURE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">column</span><span class="p">)</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">},</span>
+                      <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># SHARP CATEGORICAL FEATURES</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_dict</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">({</span><span class="n">column</span><span class="p">:</span> <span class="s1">&#39;&#39;</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_dict</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">Counterizor</span><span class="o">.</span><span class="n">_counter</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="s1">&#39;sep&#39;</span><span class="p">]),</span> <span class="n">param</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]))</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">column</span><span class="p">:</span> <span class="n">SHARP_CATEGORICAL_FEATURE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">column</span><span class="p">)</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_dict</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span></div>
+
+    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">process_counterizor</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">counterizor_</span><span class="p">,</span> <span class="n">partial_df</span> <span class="o">=</span> <span class="n">args</span>
+    <span class="k">return</span> <span class="n">counterizor_</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">partial_df</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">parallel_counterizor</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">counterizor</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">n_jobs</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">n_jobs</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">n_jobs</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">n_jobs</span><span class="p">)</span>
+    <span class="n">pool_results</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">process_counterizor</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="n">repeat</span><span class="p">(</span><span class="n">counterizor</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">n_jobs</span><span class="p">))))</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">pool_results</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="Vectorizor"><a class="viewcode-back" href="../index.html#dsUtils.Vectorizor">[docs]</a><span class="k">class</span> <span class="nc">Vectorizor</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    VECTORIZOR</span>
+<span class="sd">    input = counterized DataFrame</span>
+<span class="sd">    output = namedtuple(&#39;data&#39;, [&#39;df&#39;, &#39;sm&#39;, &#39;sm_columns&#39;])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignored_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Vectorizor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Vectorizor&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="o">=</span> <span class="n">ignored_columns</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_columns</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_vectorizers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">too_many_categories</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numeric_columns</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="c1"># GET (NAME: KIND) OF COLUMNS</span>
+        <span class="n">columns_kind</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span><span class="p">}</span>
+        <span class="c1"># NUMERICAL FEATURES</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numeric_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">columns_kind</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span> <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;if&#39;</span><span class="p">]</span>
+        <span class="c1"># CATEGORICAL FEATURES</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns_kind</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">REGEXP_SCF</span><span class="p">,</span> <span class="n">col</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns_kind</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">REGEXP_CF</span><span class="p">,</span> <span class="n">col</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_columns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_columns</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">DictVectorizer</span><span class="p">(</span><span class="n">sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">DictVectorizer</span><span class="p">(</span><span class="n">sparse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">too_many_categories</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">vocabulary_</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">7</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">]</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">columns_kind</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numeric_columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Found non-counterized categorical columns </span><span class="si">{columns}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">                </span><span class="se">\n</span><span class="s2"> option 1: add them to ignored_columns_list </span><span class="se">\n</span><span class="s2"> option 2: consider Counterizor first&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">columns</span><span class="o">=</span><span class="n">missing</span><span class="p">))</span>
+            <span class="k">return</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="n">sharp_sparse</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">sm_columns</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_columns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_columns</span><span class="p">:</span>
+                <span class="n">sharp_sparse</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
+                <span class="n">names_tmp</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">vocabulary_</span><span class="p">,</span>
+                                   <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sharp_categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">vocabulary_</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+                <span class="n">sm_columns</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{column}</span><span class="s1">_</span><span class="si">{name}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">column</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names_tmp</span><span class="p">]</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">nb_of_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="n">concat_</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">:</span>
+            <span class="c1"># ################### #</span>
+            <span class="c1"># BECAUSE OF AUGUSTIN #</span>
+            <span class="c1"># ################### #</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">too_many_categories</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="n">sharp_sparse</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">])</span>
+                    <span class="n">names_tmp</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">vocabulary_</span><span class="p">,</span>
+                                       <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">vocabulary_</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+                    <span class="n">sm_columns</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{column}</span><span class="s1">_</span><span class="si">{name}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">column</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names_tmp</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">names_tmp</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">vocabulary_</span><span class="p">,</span>
+                                       <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">vocabulary_</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+                    <span class="n">names_categorical_columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{column}</span><span class="s1">_</span><span class="si">{name}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">column</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span>
+                                                 <span class="n">names_tmp</span><span class="p">]</span>
+                    <span class="n">df_cat</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categorical_vectorizers</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">])</span><span class="o">.</span><span class="n">todense</span><span class="p">(),</span>
+                                          <span class="n">columns</span><span class="o">=</span><span class="n">names_categorical_columns</span><span class="p">)</span>
+                    <span class="n">suffixes</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span>
+                                <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;^</span><span class="si">{p}</span><span class="s1">_(.*)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">column</span><span class="p">),</span> <span class="n">col</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">names_categorical_columns</span><span class="p">]</span> <span class="k">if</span> <span class="n">m</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="s2">&quot;other&quot;</span> <span class="ow">in</span> <span class="n">suffixes</span><span class="p">:</span>
+                        <span class="n">suffixes</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;other&#39;</span><span class="p">)</span>
+                        <span class="n">df_cat</span><span class="o">.</span><span class="n">ix</span><span class="p">[</span>
+                            <span class="n">df_cat</span><span class="p">[</span><span class="s2">&quot;</span><span class="si">{p}</span><span class="s2">_other&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">column</span><span class="p">)]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">{p}</span><span class="s2">_</span><span class="si">{s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">column</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">suffix</span><span class="p">)</span> <span class="k">for</span> <span class="n">suffix</span>
+                                                                        <span class="ow">in</span> <span class="n">suffixes</span><span class="p">]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                        <span class="n">df_cat</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{p}</span><span class="s2">_other&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">column</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">concat_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_cat</span><span class="p">)</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># ################### #</span>
+                <span class="c1"># BECAUSE OF AUGUSTIN #</span>
+                <span class="c1"># ################### #</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">concat_</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+        <span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span><span class="n">sharp_sparse</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sharp_sparse</span> <span class="k">if</span> <span class="n">sharp_sparse</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">sm</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">blocks</span><span class="o">=</span><span class="n">blocks</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;csr&#39;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sm_columns</span><span class="p">)</span> <span class="o">==</span> <span class="n">sm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">sm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">nb_of_samples</span>
+        <span class="n">concatenated_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">concat_</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">concatenated_df</span><span class="p">)</span> <span class="o">==</span> <span class="n">nb_of_samples</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;df&#39;</span><span class="p">,</span> <span class="s1">&#39;sm&#39;</span><span class="p">,</span> <span class="s1">&#39;sm_columns&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">concatenated_df</span><span class="p">,</span> <span class="n">sm</span><span class="o">=</span><span class="n">sm</span><span class="p">,</span> <span class="n">sm_columns</span><span class="o">=</span><span class="n">sm_columns</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Imputor"><a class="viewcode-back" href="../index.html#dsUtils.Imputor">[docs]</a><span class="k">class</span> <span class="nc">Imputor</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    IMPUTOR</span>
+<span class="sd">    input = vectorized DataFrame</span>
+<span class="sd">    output = same DataFrame with missing values imputed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignored_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">na_strategy</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Imputor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Imputor&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span> <span class="o">=</span> <span class="n">ignored_columns</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">na_strategy</span> <span class="o">=</span> <span class="n">na_strategy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">na_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="n">imputed_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignored_columns</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">imputed_columns</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">na_strategy</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">na_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">na_strategy</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">imputed_columns</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">na_dict</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sparsifior"><a class="viewcode-back" href="../index.html#dsUtils.Sparsifior">[docs]</a><span class="k">class</span> <span class="nc">Sparsifior</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    SPARSIFIOR</span>
+<span class="sd">    input = DataFrame + sparse matrix</span>
+<span class="sd">    output = namedtuple(&#39;data&#39;, [&#39;keys&#39;, &#39;features&#39;, &#39;X&#39;, &#39;y&#39;])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Sparsifior</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Sparsifior&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="n">keys</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">([</span><span class="n">keys</span><span class="p">]</span> <span class="k">if</span> <span class="n">keys</span> <span class="k">else</span> <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">target</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sm_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">X_sparse_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">non_numeric</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span>
+                           <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">&#39;if&#39;</span> <span class="ow">and</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="ow">and</span> <span class="n">col</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_numeric</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Non-numeric feature found! Did you forget to specify keys and/or target?&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Keys </span><span class="si">{keys}</span><span class="s2"> do not exist in the DataFrame you provided!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">keys</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">]</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Target </span><span class="si">{target}</span><span class="s2"> does not exist in the DataFrame you provided!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">]</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">X_sparse_dict</span><span class="p">[</span><span class="s1">&#39;df&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="n">features</span> <span class="o">+=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">sm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">sm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">X_sparse_dict</span><span class="p">[</span><span class="s1">&#39;sm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sm</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="n">features</span> <span class="o">+</span> <span class="n">sm_columns</span> <span class="k">if</span> <span class="n">sm_columns</span> <span class="k">else</span> <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;You did not provide the sparse matrix features names.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_sparse_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">blocks</span><span class="o">=</span><span class="p">[</span><span class="n">X_sparse_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">X_sparse_dict</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;csr&#39;</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="s1">&#39;features&#39;</span><span class="p">,</span> <span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="VarianceSelector"><a class="viewcode-back" href="../index.html#dsUtils.VarianceSelector">[docs]</a><span class="k">class</span> <span class="nc">VarianceSelector</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Feature selector that removes all low variance features.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">VarianceSelector</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;VarianceSelector&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span> <span class="o">=</span> <span class="n">VarianceThreshold</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">int</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Input type cannot be </span><span class="si">{x}</span><span class="s1">. &#39;</span>
+                           <span class="s1">&#39; It can only be int or float.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">threshold</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="VarianceSelector.fit"><a class="viewcode-back" href="../index.html#dsUtils.VarianceSelector.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Learn empirical variances from X.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like or sparse matrix of shape = [n_samples, n_features]</span>
+<span class="sd">            Sample vectors from which to compute variances.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="VarianceSelector.transform"><a class="viewcode-back" href="../index.html#dsUtils.VarianceSelector.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reduce X to the selected features.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array of shape [n_samples, n_features]</span>
+<span class="sd">            The input samples.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X_r : array of shape [n_samples, n_selected_features]</span>
+<span class="sd">            The input samples with only the selected features.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VarianceSelector.fit_transform"><a class="viewcode-back" href="../index.html#dsUtils.VarianceSelector.fit_transform">[docs]</a>    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fit to data, then transform it.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array of shape [n_samples, n_features]</span>
+<span class="sd">            Training set.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X_new : array of shape [n_samples, n_features_new]</span>
+<span class="sd">                Transformed array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VarianceSelector.select_features"><a class="viewcode-back" href="../index.html#dsUtils.VarianceSelector.select_features">[docs]</a>    <span class="k">def</span> <span class="nf">select_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Select features with enough variance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        features : array of shape [n_features]</span>
+<span class="sd">                   Names of the features.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        selected_features: array of shape [n_selected_features].</span>
+<span class="sd">                           An array with only the names of the selected_features.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">compress</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span><span class="o">.</span><span class="n">get_support</span><span class="p">()))</span></div></div>
+
+
+<div class="viewcode-block" id="Preprocessor"><a class="viewcode-back" href="../index.html#dsUtils.Preprocessor">[docs]</a><span class="k">class</span> <span class="nc">Preprocessor</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Preprocessor</span>
+<span class="sd">    This class allows for the complete pre-processing of a DataFrame into a sparse matrix for model input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Preprocessor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Preprocessor&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prunificator</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counterizor</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vectorizor</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imputor</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sparsifior</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="Preprocessor.fit_transform"><a class="viewcode-back" href="../index.html#dsUtils.Preprocessor.fit_transform">[docs]</a>    <span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">pruning_frequency</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_not_use</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">na_strategy</span><span class="o">=</span><span class="n">MeanStrategy</span><span class="p">(),</span> <span class="n">variance_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Pre-process input_files for the training phase. Once completed, you should save the resulting Preprocessor</span>
+<span class="sd">        object for the predict phase.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas DataFrame): dataframe to be pre-processed.</span>
+
+<span class="sd">            pruning_frequency (float or None): Frequency below which value in categorical features are pruned (set to *misc*). (deactivated by default)</span>
+
+<span class="sd">            do_not_use (list or None): Leave these columns alone!</span>
+
+<span class="sd">            sharp_categorical_dict (dict): {&#39;column&#39;: {&#39;sep&#39;: &quot;#&quot;, &#39;norm&#39;: True/False} }.</span>
+
+<span class="sd">                                           If not provided, program looks for columns ending in *_cat* and automatically</span>
+<span class="sd">                                           creates an entry in the dict with value {&#39;sep&#39;: &quot;#&quot;, &#39;norm&#39;: True}.</span>
+
+<span class="sd">            na_strategy (Strategy): Strategy used to impute missing values.</span>
+
+<span class="sd">            variance_threshold (float or None): Threshold for variance selector. (deactivated by default)</span>
+
+<span class="sd">            low_memory (bool): If True, counterizor will not use parallel computation. default: False</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            namedtuple(&#39;data&#39;, [&#39;X&#39;, &#39;other&#39;, &#39;names&#39;])</span>
+
+<span class="sd">                data.X (scipy sparse matrix): model input</span>
+
+<span class="sd">                data.other (pandas DataFrame): columns unused</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># INFER SHARP CATEGORICAL FEATURES IF NOT PROVIDED</span>
+        <span class="n">sharp_categorical_dict</span> <span class="o">=</span> <span class="n">sharp_categorical_dict</span> <span class="ow">or</span> <span class="p">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span> <span class="p">{</span><span class="s2">&quot;sep&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span>
+                                                            <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;(.*_cat)$&quot;</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span> <span class="k">if</span> <span class="n">m</span><span class="p">}</span>
+
+        <span class="c1"># PRUNIFICATOR: FIT &amp; TRANSFORM (IF ACTIVATED)</span>
+        <span class="k">if</span> <span class="n">pruning_frequency</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prunificator</span> <span class="o">=</span> <span class="n">Prunificator</span><span class="p">(</span><span class="n">ignored_columns</span><span class="o">=</span><span class="n">do_not_use</span><span class="p">,</span>
+                                                           <span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="n">sharp_categorical_dict</span><span class="p">,</span>
+                                                           <span class="n">frequency</span><span class="o">=</span><span class="n">pruning_frequency</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prunificator</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># COUNTERIZOR: FIT &amp; TRANSFORM</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counterizor</span> <span class="o">=</span> <span class="n">Counterizor</span><span class="p">(</span><span class="n">ignored_columns</span><span class="o">=</span><span class="n">do_not_use</span><span class="p">,</span>
+                                                     <span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="n">sharp_categorical_dict</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">parallel_counterizor</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counterizor</span><span class="p">,</span>
+                                                <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">low_memory</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">counterizor</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># VECTORIZOR: FIT &amp; TRANSFORM</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vectorizor</span> <span class="o">=</span> <span class="n">Vectorizor</span><span class="p">(</span><span class="n">ignored_columns</span><span class="o">=</span><span class="n">do_not_use</span><span class="p">)</span>
+        <span class="n">vectorized_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectorizor</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># IMPUTOR: FIT &amp; TRANSFORM</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imputor</span> <span class="o">=</span> <span class="n">Imputor</span><span class="p">(</span><span class="n">ignored_columns</span><span class="o">=</span><span class="n">do_not_use</span><span class="p">,</span> <span class="n">na_strategy</span><span class="o">=</span><span class="n">na_strategy</span><span class="p">)</span>
+        <span class="n">imputed_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imputor</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">vectorized_data</span><span class="o">.</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># PRUNIFICATOR: TRANSFORM</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sparsifior</span> <span class="o">=</span> <span class="n">Sparsifior</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="n">do_not_use</span><span class="p">)</span>
+        <span class="n">sparsified_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sparsifior</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">imputed_df</span><span class="p">,</span> <span class="n">vectorized_data</span><span class="o">.</span><span class="n">sm</span><span class="p">,</span> <span class="n">vectorized_data</span><span class="o">.</span><span class="n">sm_columns</span><span class="p">)</span>
+
+        <span class="c1"># VARIANCE SELECTOR: FIT &amp; TRANSFORM (IF ACTIVATED)</span>
+        <span class="k">if</span> <span class="n">variance_threshold</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span> <span class="o">=</span> <span class="n">VarianceSelector</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="n">variance_threshold</span><span class="p">)</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">sparsified_data</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span><span class="o">.</span><span class="n">select_features</span><span class="p">(</span><span class="n">sparsified_data</span><span class="o">.</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">sparsified_data</span><span class="o">.</span><span class="n">X</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="n">sparsified_data</span><span class="o">.</span><span class="n">features</span>
+
+        <span class="c1"># OUTPUT</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">,</span> <span class="s1">&#39;names&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="n">sparsified_data</span><span class="o">.</span><span class="n">keys</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">features</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Preprocessor.transform"><a class="viewcode-back" href="../index.html#dsUtils.Preprocessor.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Pre-process input_files using the same pre-processing parameters used for the training phase.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            df (pandas DataFrame): dataframe to be pre-processed.</span>
+
+<span class="sd">            low_memory (bool): If True, counterizor will not use parallel computation. default: False</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            namedtuple(&#39;data&#39;, [&#39;X&#39;, &#39;other&#39;, &#39;names&#39;])</span>
+
+<span class="sd">                data.X (scipy sparse matrix): model input</span>
+
+<span class="sd">                data.other (pandas DataFrame): columns unused</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># PRUNIFICATOR: TRANSFORM</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prunificator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prunificator</span> <span class="k">else</span> <span class="n">df</span>
+
+        <span class="c1"># COUNTERIZOR: TRANSFORM</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">parallel_counterizor</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counterizor</span><span class="p">,</span>
+                                  <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">low_memory</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">counterizor</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># VECTORIZOR: TRANSFORM</span>
+        <span class="n">vectorized_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectorizor</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># IMPUTOR: TRANSFORM</span>
+        <span class="n">imputed_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imputor</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">vectorized_data</span><span class="o">.</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># SPARSIFIOR: TRANSFORM</span>
+        <span class="n">sparsified_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sparsifior</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">imputed_df</span><span class="p">,</span> <span class="n">vectorized_data</span><span class="o">.</span><span class="n">sm</span><span class="p">,</span> <span class="n">vectorized_data</span><span class="o">.</span><span class="n">sm_columns</span><span class="p">)</span>
+
+        <span class="c1"># VARIANCE SELECTOR: TRANSFORM</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">sparsified_data</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance_selector</span><span class="o">.</span><span class="n">select_features</span><span class="p">(</span><span class="n">sparsified_data</span><span class="o">.</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">sparsified_data</span><span class="o">.</span><span class="n">X</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="n">sparsified_data</span><span class="o">.</span><span class="n">features</span>
+
+        <span class="c1"># OUTPUT</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">,</span> <span class="s1">&#39;names&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="n">sparsified_data</span><span class="o">.</span><span class="n">keys</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">features</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CustomStrategyTest"><a class="viewcode-back" href="../index.html#dsUtils.CustomStrategyTest">[docs]</a><span class="k">class</span> <span class="nc">CustomStrategyTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+<div class="viewcode-block" id="CustomStrategyTest.setUp"><a class="viewcode-back" href="../index.html#dsUtils.CustomStrategyTest.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([[</span><span class="mf">34.5</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="p">[</span><span class="mf">21.4</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">11</span><span class="p">],</span> <span class="p">[</span><span class="mf">12.8</span><span class="p">,</span> <span class="mi">3</span><span class="p">]],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;num1&quot;</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;num1&quot;</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_empty_strategy_default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({})</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mf">22.9</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">}</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">expected</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">actual</span><span class="p">))</span>
+        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="n">expected</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">actual</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_empty_strategy_default_0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({},</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">),</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_empty_numeric_cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="p">[]),</span> <span class="p">{})</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_int</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">),</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_float</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mf">3.14</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">),</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mf">3.14</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_bool</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">),</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_unknown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="s2">&quot;abc&quot;</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">),</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_median</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="s2">&quot;median&quot;</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">),</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mf">21.4</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">CustomStrategy</span><span class="p">({</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">},</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mf">22.9</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">expected</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">actual</span><span class="p">))</span>
+        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="n">expected</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">actual</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="NoneStrategyTest"><a class="viewcode-back" href="../index.html#dsUtils.NoneStrategyTest">[docs]</a><span class="k">class</span> <span class="nc">NoneStrategyTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="n">NoneStrategy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">ns</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="p">{})</span></div>
+
+
+<div class="viewcode-block" id="ZeroStrategyTest"><a class="viewcode-back" href="../index.html#dsUtils.ZeroStrategyTest">[docs]</a><span class="k">class</span> <span class="nc">ZeroStrategyTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ZeroStrategyTest.setUp"><a class="viewcode-back" href="../index.html#dsUtils.ZeroStrategyTest.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;num1&quot;</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="n">ZeroStrategy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">zs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_cols</span><span class="p">),</span> <span class="p">{</span><span class="s2">&quot;num1&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;num2&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">test_na_dictionary_empty_numeric_cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="n">ZeroStrategy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">zs</span><span class="o">.</span><span class="n">na_dictionary</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">[]),</span> <span class="p">{})</span></div>
+
+
+<div class="viewcode-block" id="CounterizorTest"><a class="viewcode-back" href="../index.html#dsUtils.CounterizorTest">[docs]</a><span class="k">class</span> <span class="nc">CounterizorTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+<div class="viewcode-block" id="CounterizorTest.setUp"><a class="viewcode-back" href="../index.html#dsUtils.CounterizorTest.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">Counterizor</span><span class="p">(</span><span class="n">ignored_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;useless&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">],</span>
+                             <span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;concat_categorical&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;sep&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}})</span>
+        <span class="n">column_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;useless&#39;</span><span class="p">,</span> <span class="s1">&#39;numeric1&#39;</span><span class="p">,</span> <span class="s1">&#39;numeric2&#39;</span><span class="p">,</span> <span class="s1">&#39;concat_categorical&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([[</span><span class="s1">&#39;A34G56G&#39;</span><span class="p">,</span> <span class="s1">&#39;001&#39;</span><span class="p">,</span> <span class="mf">34.5</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;a#b#a#b#c&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                                <span class="p">[</span><span class="s1">&#39;V27H74P&#39;</span><span class="p">,</span> <span class="s1">&#39;002&#39;</span><span class="p">,</span> <span class="mf">21.4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                                <span class="p">[</span><span class="s1">&#39;P34N12C&#39;</span><span class="p">,</span> <span class="s1">&#39;002&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                                <span class="p">[</span><span class="s1">&#39;N08W87W&#39;</span><span class="p">,</span> <span class="s1">&#39;002&#39;</span><span class="p">,</span> <span class="mf">12.8</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;b#b#d#d#e#e&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span> <span class="n">columns</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">test_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">categorical_columns</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;gender&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">test_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">df_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertListEqual</span><span class="p">(</span><span class="n">df_c</span><span class="o">.</span><span class="n">cat_gender</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="p">[{</span><span class="s1">&#39;F&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;M&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertDictEqual</span><span class="p">(</span><span class="n">df_c</span><span class="p">[</span><span class="s2">&quot;#_cat_concat_categorical&quot;</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="p">{</span><span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">:</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;e&quot;</span><span class="p">:</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mi">3</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="VarianceSelectorTest"><a class="viewcode-back" href="../index.html#dsUtils.VarianceSelectorTest">[docs]</a><span class="k">class</span> <span class="nc">VarianceSelectorTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+<div class="viewcode-block" id="VarianceSelectorTest.setUp"><a class="viewcode-back" href="../index.html#dsUtils.VarianceSelectorTest.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([[</span><span class="mf">34.5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">],</span> <span class="p">[</span><span class="mf">21.4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">],</span> <span class="p">[</span><span class="mf">12.8</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">test_VarianceSelector_0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">vs</span> <span class="o">=</span> <span class="n">VarianceSelector</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">expected_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">3.45000000e+01</span><span class="p">,</span>   <span class="mf">4.00000000e+00</span><span class="p">,</span>   <span class="mf">1.00000000e-02</span><span class="p">],</span>
+                                 <span class="p">[</span><span class="mf">2.14000000e+01</span><span class="p">,</span>   <span class="mf">7.00000000e+00</span><span class="p">,</span>   <span class="mf">2.00000000e-01</span><span class="p">],</span>
+                                 <span class="p">[</span><span class="mf">5.00000000e+00</span><span class="p">,</span>   <span class="mf">1.10000000e+01</span><span class="p">,</span>   <span class="mf">4.00000000e-02</span><span class="p">],</span>
+                                 <span class="p">[</span><span class="mf">1.28000000e+01</span><span class="p">,</span>   <span class="mf">3.00000000e+00</span><span class="p">,</span>   <span class="mf">7.00000000e-01</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">((</span><span class="n">vs</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">)</span> <span class="o">==</span> <span class="n">expected_res</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">vs</span><span class="o">.</span><span class="n">select_features</span><span class="p">([</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">]),</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">test_VarianceSelector_1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">vs</span> <span class="o">=</span> <span class="n">VarianceSelector</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">expected_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">34.5</span><span class="p">,</span> <span class="mf">4.</span><span class="p">],</span>
+                                 <span class="p">[</span><span class="mf">21.4</span><span class="p">,</span> <span class="mf">7.</span><span class="p">],</span>
+                                 <span class="p">[</span><span class="mf">5.</span><span class="p">,</span> <span class="mf">11.</span><span class="p">],</span>
+                                 <span class="p">[</span><span class="mf">12.8</span><span class="p">,</span> <span class="mf">3.</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">((</span><span class="n">vs</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">)</span> <span class="o">==</span> <span class="n">expected_res</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">vs</span><span class="o">.</span><span class="n">select_features</span><span class="p">([</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">]),</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="n">column_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;sc1&#39;</span><span class="p">,</span> <span class="s1">&#39;numeric1&#39;</span><span class="p">,</span> <span class="s1">&#39;numeric2&#39;</span><span class="p">,</span> <span class="s1">&#39;sc2&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="s1">&#39;c1&#39;</span><span class="p">,</span> <span class="s1">&#39;c2&#39;</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([[</span><span class="s1">&#39;A34G56G&#39;</span><span class="p">,</span> <span class="s1">&#39;ab_cd&#39;</span><span class="p">,</span> <span class="mf">34.5</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;a#b#a#b#c&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;AA&quot;</span><span class="p">,</span><span class="s2">&quot;AAA&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;P34N12C&#39;</span><span class="p">,</span> <span class="s1">&#39;aé_ef&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">98</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="s2">&quot;AAA&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;V27H74P&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mf">18.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.45</span><span class="p">,</span> <span class="s2">&quot;#b#a#&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;CC&quot;</span><span class="p">,</span> <span class="s2">&quot;BBB&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;B74Q12W&#39;</span><span class="p">,</span> <span class="s1">&#39;cd_ef&#39;</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.021</span><span class="p">,</span> <span class="s2">&quot;#b#a#&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;CCC&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;G98S45X&#39;</span><span class="p">,</span> <span class="s1">&#39;gh_ij&#39;</span><span class="p">,</span> <span class="mf">78.45</span><span class="p">,</span> <span class="mi">9874</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;DD&quot;</span><span class="p">,</span> <span class="s2">&quot;BBB&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;R16D00C&#39;</span><span class="p">,</span> <span class="s1">&#39;gh_ij_ij&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">4.75</span><span class="p">,</span> <span class="s2">&quot;#b#a#&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;EE&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;N08W87W&#39;</span><span class="p">,</span> <span class="s1">&#39;ab____kl&#39;</span><span class="p">,</span> <span class="mf">12.8</span><span class="p">,</span> <span class="mf">7.54</span><span class="p">,</span> <span class="s2">&quot;b#b#d#d#e#e&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;FF&quot;</span><span class="p">,</span> <span class="s2">&quot;AAA&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;U13F20V&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="mf">12.8</span><span class="p">,</span> <span class="mf">98.12</span><span class="p">,</span> <span class="s2">&quot;b#b#d#d#a#a&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;GG&quot;</span><span class="p">,</span> <span class="s2">&quot;AAA&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;P42G78B&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.28</span><span class="p">,</span> <span class="mf">42.36</span><span class="p">,</span> <span class="s2">&quot;b#b###e&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;HH&quot;</span><span class="p">,</span> <span class="s2">&quot;CCC&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;M98H12N&#39;</span><span class="p">,</span> <span class="s1">&#39;ab_kl_&#39;</span><span class="p">,</span> <span class="mi">1478</span><span class="p">,</span> <span class="o">-</span><span class="mf">18.45</span><span class="p">,</span> <span class="s2">&quot;a##c#d#&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;II&quot;</span><span class="p">,</span> <span class="s2">&quot;BBB&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;W45J98P&#39;</span><span class="p">,</span> <span class="s1">&#39;_gh_cd&#39;</span><span class="p">,</span> <span class="mf">6.</span><span class="p">,</span> <span class="mf">1e-05</span><span class="p">,</span> <span class="s2">&quot;#d&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;JJ&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+                      <span class="p">],</span>
+                      <span class="n">columns</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Data Frame (raw)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">Preprocessor</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">pruning_frequency</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_not_use</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+                           <span class="n">variance_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                           <span class="n">sharp_categorical_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sc1&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s1">&#39;norm&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span> <span class="s1">&#39;sc2&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="s1">&#39;norm&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}},</span>
+                           <span class="n">na_strategy</span><span class="o">=</span><span class="n">MedianStrategy</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Data Frame (preprocessed)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="o">.</span><span class="n">other</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">todense</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">column_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;sc1&#39;</span><span class="p">,</span> <span class="s1">&#39;numeric1&#39;</span><span class="p">,</span> <span class="s1">&#39;numeric2&#39;</span><span class="p">,</span> <span class="s1">&#39;sc2&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="s1">&#39;c1&#39;</span><span class="p">,</span> <span class="s1">&#39;c2&#39;</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([[</span><span class="s1">&#39;A34G56G&#39;</span><span class="p">,</span> <span class="s1">&#39;ab&#39;</span><span class="p">,</span> <span class="mf">34.5</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;AA&quot;</span><span class="p">,</span><span class="s2">&quot;AAA&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;P34N12C&#39;</span><span class="p">,</span> <span class="s1">&#39;abh&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">98</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="s2">&quot;AAA&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;V27H74P&#39;</span><span class="p">,</span> <span class="s1">&#39;wdf&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mf">18.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.45</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;CC&quot;</span><span class="p">,</span> <span class="s2">&quot;BBB&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;V27H74P&#39;</span><span class="p">,</span> <span class="s1">&#39;cdz&#39;</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.021</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;CCC&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;G98S45X&#39;</span><span class="p">,</span> <span class="s1">&#39;ija&#39;</span><span class="p">,</span> <span class="mf">78.45</span><span class="p">,</span> <span class="mi">9874</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;DD&quot;</span><span class="p">,</span> <span class="s2">&quot;BBB&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;A34G56G&#39;</span><span class="p">,</span> <span class="s1">&#39;ij&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">4.75</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;EE&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;A34G56G&#39;</span><span class="p">,</span> <span class="s1">&#39;kl&#39;</span><span class="p">,</span> <span class="mf">12.8</span><span class="p">,</span> <span class="mf">7.54</span><span class="p">,</span> <span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;FF&quot;</span><span class="p">,</span> <span class="s2">&quot;AAA&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;U13F20V&#39;</span><span class="p">,</span> <span class="s1">&#39;pot&#39;</span><span class="p">,</span> <span class="mf">12.8</span><span class="p">,</span> <span class="mf">98.12</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;GG&quot;</span><span class="p">,</span> <span class="s2">&quot;AAA&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;A34G56G&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.28</span><span class="p">,</span> <span class="mf">42.36</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;HH&quot;</span><span class="p">,</span> <span class="s2">&quot;CCC&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;M98H12N&#39;</span><span class="p">,</span> <span class="s1">&#39;klu&#39;</span><span class="p">,</span> <span class="mi">1478</span><span class="p">,</span> <span class="o">-</span><span class="mf">18.45</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;II&quot;</span><span class="p">,</span> <span class="s2">&quot;BBB&quot;</span><span class="p">],</span>
+                       <span class="p">[</span><span class="s1">&#39;U13F20V&#39;</span><span class="p">,</span> <span class="s1">&#39;gh&#39;</span><span class="p">,</span> <span class="mf">6.</span><span class="p">,</span> <span class="mf">1e-05</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;JJ&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+                      <span class="p">],</span>
+                      <span class="n">columns</span><span class="o">=</span><span class="n">column_names</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Data Frame (raw, not aggregated)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="n">strategy</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="nb">max</span><span class="p">,</span>
+                <span class="s2">&quot;sc1&quot;</span><span class="p">:</span> <span class="s2">&quot;counter&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sc2&quot;</span><span class="p">:</span> <span class="s2">&quot;normalized_counter&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;c1&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+                <span class="s2">&quot;c2&quot;</span><span class="p">:</span> <span class="s2">&quot;counter&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="nb">max</span><span class="p">,</span>
+                <span class="s2">&quot;numeric1&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
+                <span class="s2">&quot;numeric2&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">}</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">Aggregator</span><span class="p">(</span><span class="n">aggregation_keys</span><span class="o">=</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="n">aggregation_strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">,</span> <span class="n">vectorizor_compatibility</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">agg_df</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Data Frame (aggregated)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">agg_df</span><span class="p">)</span>
+
+    <span class="n">strategy</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="nb">max</span><span class="p">,</span>
+                <span class="s2">&quot;sc1&quot;</span><span class="p">:</span> <span class="s2">&quot;counter&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sc2&quot;</span><span class="p">:</span> <span class="s2">&quot;normalized_counter&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;c1&quot;</span><span class="p">:</span> <span class="s2">&quot;counter&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;c2&quot;</span><span class="p">:</span> <span class="s2">&quot;counter&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="nb">max</span><span class="p">,</span>
+                <span class="s2">&quot;numeric1&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
+                <span class="s2">&quot;numeric2&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">}</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">Aggregator</span><span class="p">(</span><span class="n">aggregation_keys</span><span class="o">=</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="n">aggregation_strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">)</span>
+    <span class="n">agg_df</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Data Frame (aggregated, vectorizor compatible)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">agg_df</span><span class="p">)</span>
+
+    <span class="n">v</span> <span class="o">=</span> <span class="n">Vectorizor</span><span class="p">(</span><span class="n">ignored_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">])</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">agg_df</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Data Frame (vectorized)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">sm</span><span class="o">.</span><span class="n">todense</span><span class="p">(),</span><span class="n">columns</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">sm_columns</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, TGT
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
