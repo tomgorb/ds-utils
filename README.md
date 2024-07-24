@@ -3,7 +3,7 @@ ds-utils
 
 A set of classes to ease the pre-processing of data to feed machine learning algorithms.
 
-**python 2.7 and python 3.6 compatible**
+**python 2.7 and python 3.12 compatible**
 
 Main tool:
 
